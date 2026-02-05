@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list = ["*"]
     
+    # Government APIs (Optional - will use mock data if not provided)
+    NTIS_API_KEY: str = ""
+    KSTARTUP_API_KEY: str = ""
+    
     class Config:
         env_file = ".env"
 

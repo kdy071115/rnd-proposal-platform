@@ -9,8 +9,10 @@ class DocumentBase(BaseModel):
     company_id: str
 
 
-class DocumentCreate(DocumentBase):
-    pass
+class DocumentCreate(BaseModel):
+    """Schema for creating a document (company_id comes from current user)."""
+    title: str
+    content: str
 
 
 class DocumentUpdate(BaseModel):

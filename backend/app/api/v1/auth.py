@@ -19,14 +19,15 @@ router = APIRouter()
 
 @router.post("/signup", response_model=Token)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user and create their company."""
+    """Register a new user and create their company with basic info."""
     db_user = db.query(UserEx).filter(UserEx.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # 1. Create a new Company
+    # 1. Create a new Company with basic default values
     from datetime import datetime
     new_company_id = str(uuid.uuid4())
+    
     db_company = CompanyEx(
         id=new_company_id,
         name=user.company_name,

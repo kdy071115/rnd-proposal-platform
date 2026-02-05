@@ -3,9 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.core.database import Base, engine
-from app.services.init_data import init_rd_data
-from app.core.database import SessionLocal
+from app.core.database import Base, engine, SessionLocal
+from app.services.data_sync import init_rd_notices_if_empty
 from app.api.v1 import auth, companies, documents, team, generate, recommendations
 
 # Create FastAPI app
@@ -14,20 +13,21 @@ app = FastAPI(title="R&D SaaS Platform API")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
 # Startup event
 @app.on_event("startup")
 def startup():
-    """Initialize database and sample data on startup."""
+    """Initialize database and R&D notices on startup."""
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    init_rd_data(db)
+    init_rd_notices_if_empty(db)
     db.close()
 
 

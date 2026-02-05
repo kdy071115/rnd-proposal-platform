@@ -6,7 +6,15 @@ from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import UserEx
 from app.models.company import CompanyEx
-from app.schemas.company import CompanyCreate, CompanyResponse
+from app.schemas.company import (
+    CompanyCreate, 
+    CompanyUpdate, 
+    CompanyResponse, 
+    FinancialCreate, 
+    FinancialBase,
+    ProjectCreate,
+    ProjectBase
+)
 from app.services.company_service import calculate_company_score
 
 router = APIRouter()
@@ -29,19 +37,66 @@ def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
 @router.get("/me", response_model=CompanyResponse)
 def read_my_company(current_user: UserEx = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get current user's company information."""
-    print(f"[DEBUG] User email: {current_user.email}, company_id: {current_user.company_id}")
-    
     if not current_user.company_id:
-        print("[DEBUG] No company_id associated with user")
         raise HTTPException(status_code=404, detail="No company associated with user")
     
     db_company = db.query(CompanyEx).filter(CompanyEx.id == current_user.company_id).first()
     if not db_company:
-        print(f"[DEBUG] Company not found in DB for id: {current_user.company_id}")
         raise HTTPException(status_code=404, detail="Company not found")
         
-    print(f"[DEBUG] Found company: {db_company.name}")
     return calculate_company_score(db_company)
+
+
+@router.put("/me", response_model=CompanyResponse)
+def update_my_company(
+    company_update: CompanyUpdate, 
+    current_user: UserEx = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Update current user's company information."""
+    db_company = db.query(CompanyEx).filter(CompanyEx.id == current_user.company_id).first()
+    if not db_company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    update_data = company_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_company, key, value)
+    
+    db.commit()
+    db.refresh(db_company)
+    return calculate_company_score(db_company)
+
+
+@router.post("/me/financials", response_model=FinancialBase)
+def add_financial(
+    financial: FinancialCreate, 
+    current_user: UserEx = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Add financial data to current user's company."""
+    from app.models.company import FinancialEx
+    
+    db_financial = FinancialEx(**financial.dict(), company_id=current_user.company_id)
+    db.add(db_financial)
+    db.commit()
+    db.refresh(db_financial)
+    return db_financial
+
+
+@router.post("/me/projects", response_model=ProjectBase)
+def add_project(
+    project: ProjectCreate, 
+    current_user: UserEx = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Add project history to current user's company."""
+    from app.models.company import ProjectHistoryEx
+    
+    db_project = ProjectHistoryEx(**project.dict(), company_id=current_user.company_id)
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
 
 
 @router.get("/{company_id}", response_model=CompanyResponse)

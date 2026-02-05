@@ -4,3 +4,8 @@ sqlalchemy
 pymysql
 pydantic
 python-dotenv
+pydantic-settings
+python-jose[cryptography]
+passlib[argon2]
+python-multipart
+requests

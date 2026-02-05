@@ -14,13 +14,12 @@ from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentRespons
 router = APIRouter()
 
 
-@router.post("/", response_model=DocumentResponse)
-def create_document(
+def _create_document_impl(
     doc: DocumentCreate,
-    current_user: UserEx = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Create a new document."""
+    current_user: UserEx,
+    db: Session
+) -> DocumentResponse:
+    """Internal implementation for document creation."""
     now = datetime.datetime.now().isoformat()
     
     db_doc = DocumentEx(
@@ -33,6 +32,26 @@ def create_document(
     db.commit()
     db.refresh(db_doc)
     return db_doc
+
+
+@router.post("/", response_model=DocumentResponse)
+def create_document_with_slash(
+    doc: DocumentCreate,
+    current_user: UserEx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new document (with trailing slash)."""
+    return _create_document_impl(doc, current_user, db)
+
+
+@router.post("", response_model=DocumentResponse)
+def create_document_without_slash(
+    doc: DocumentCreate,
+    current_user: UserEx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new document (without trailing slash)."""
+    return _create_document_impl(doc, current_user, db)
 
 
 @router.get("/", response_model=List[DocumentResponse])
