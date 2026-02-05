@@ -157,7 +157,7 @@ def _calculate_tech_score(company: CompanyEx) -> tuple[int, str]:
     """Calculate technology level score (max 15 points)."""
     # Currently using mock patent data
     # In production, this would query actual patent database
-    patent_count = 5  # Mock data
+    patent_count = 0  # In production, this would query actual patent database
     
     if patent_count >= 5:
         return 15, "특허 보유 우수"

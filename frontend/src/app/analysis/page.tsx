@@ -300,7 +300,9 @@ export default function AnalysisPage() {
                             <div className="p-4 bg-indigo-50 rounded-lg">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium">Patents</span>
-                                    <span className="text-2xl font-bold text-indigo-600">5</span>
+                                    <span className="text-2xl font-bold text-indigo-600">
+                                        {companyData.patents?.registered || 0}
+                                    </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     Registered patents in technology field
@@ -309,7 +311,9 @@ export default function AnalysisPage() {
                             <div className="p-4 bg-amber-50 rounded-lg">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium">Pending</span>
-                                    <span className="text-2xl font-bold text-amber-600">2</span>
+                                    <span className="text-2xl font-bold text-amber-600">
+                                        {companyData.patents?.pending || 0}
+                                    </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     Applications under review

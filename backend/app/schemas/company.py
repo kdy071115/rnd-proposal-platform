@@ -66,8 +66,8 @@ class CompanyResponse(CompanyBase):
     id: str
     financials: List[FinancialBase] = []
     projects: List[ProjectBase] = []
-    patents: dict = {"registered": 5, "pending": 2, "grade": "A"}
-    score: Score = Score(total=0, grade="B", breakdown=ScoreBreakdown(financial=0, technology=0, experience=0))
+    patents: dict = {"registered": 0, "pending": 0, "grade": "-"}
+    score: Score = Score(total=0, grade="-", breakdown=ScoreBreakdown(financial=0, technology=0, experience=0))
 
     class Config:
         from_attributes = True

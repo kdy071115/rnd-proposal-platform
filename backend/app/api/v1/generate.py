@@ -46,7 +46,7 @@ def generate_rd_proposal(
     founded_year = company.founded_date.split('-')[0] if company.founded_date else "2020"
     revenue = company.financials[0].revenue if company.financials else 0
     debt_ratio = company.financials[0].debt_ratio if company.financials else 0
-    patents_count = 5  # Mock
+    patents_count = 0  # In production, this would query a patents table
     projects_count = len(company.projects) if company.projects else 0
     
     # Extract R&D notice info
