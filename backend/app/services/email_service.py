@@ -1,5 +1,6 @@
 """Email service for sending invitations and notifications."""
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -17,6 +18,11 @@ class EmailService:
         self.smtp_password = settings.SMTP_PASSWORD
         self.from_email = settings.FROM_EMAIL or settings.SMTP_USER
         self.from_name = settings.FROM_NAME
+
+    def _get_socket(self, host, port, timeout):
+        # Force IPv4
+        return socket.create_connection((host, port), timeout, source_address=None)
+
     
     def send_email(
         self,
@@ -41,19 +47,30 @@ class EmailService:
             part2 = MIMEText(html_content, "html")
             msg.attach(part2)
             
-            # Send email
-            print(f"Attempting to connect to SMTP server: {self.smtp_host}:{self.smtp_port}")
+            # Resolve hostname to IPv4 address explicitly to avoid IPv6 issues
+            try:
+                print(f"Resolving IP for {self.smtp_host}...")
+                af, socktype, proto, canonname, sa = socket.getaddrinfo(self.smtp_host, self.smtp_port, socket.AF_INET, socket.SOCK_STREAM)[0]
+                smtp_ip = sa[0]
+                print(f"Resolved {self.smtp_host} to {smtp_ip}")
+            except Exception as e:
+                print(f"DNS resolution failed: {e}")
+                smtp_ip = self.smtp_host  # Fallback to hostname
+
+            print(f"Attempting to connect to SMTP server: {smtp_ip}:{self.smtp_port}")
             
             if self.smtp_port == 465:
                 # Use SSL for port 465
-                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=10) as server:
+                # Note: We must pass the original hostname for SSL validation if possible, but connecting by IP might cause SSL mismatch.
+                # If we connect by IP, we might need context=ssl.create_default_context() with check_hostname=False optionally.
+                # However, usually smtplib takes care. Let's try connecting to the IP directly.
+                with smtplib.SMTP_SSL(smtp_ip, self.smtp_port, timeout=10) as server:
                     if self.smtp_user and self.smtp_password:
                         server.login(self.smtp_user, self.smtp_password)
                     server.send_message(msg)
             else:
                 # Use STARTTLS for port 587 or others
-                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
-                    # Only use starttls if the server supports it (587 usually does)
+                with smtplib.SMTP(smtp_ip, self.smtp_port, timeout=10) as server:
                     if self.smtp_port == 587:
                         server.starttls()
                     
