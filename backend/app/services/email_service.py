@@ -42,15 +42,31 @@ class EmailService:
             msg.attach(part2)
             
             # Send email
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                server.starttls()
-                if self.smtp_user and self.smtp_password:
-                    server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
+            print(f"Attempting to connect to SMTP server: {self.smtp_host}:{self.smtp_port}")
             
+            if self.smtp_port == 465:
+                # Use SSL for port 465
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=10) as server:
+                    if self.smtp_user and self.smtp_password:
+                        server.login(self.smtp_user, self.smtp_password)
+                    server.send_message(msg)
+            else:
+                # Use STARTTLS for port 587 or others
+                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
+                    # Only use starttls if the server supports it (587 usually does)
+                    if self.smtp_port == 587:
+                        server.starttls()
+                    
+                    if self.smtp_user and self.smtp_password:
+                        server.login(self.smtp_user, self.smtp_password)
+                    server.send_message(msg)
+            
+            print(f"Email sent successfully to {to_email}")
             return True
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            print(f"Failed to send email to {to_email}. Error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def send_team_invitation(
