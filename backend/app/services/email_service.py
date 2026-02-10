@@ -1,28 +1,18 @@
 """Email service for sending invitations and notifications."""
-import smtplib
-import socket
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from typing import Optional
+import os
 
 from app.core.config import settings
 
 
 class EmailService:
-    """Service for sending emails."""
+    """Service for sending emails using Resend API."""
     
     def __init__(self):
-        self.smtp_host = settings.SMTP_HOST
-        self.smtp_port = settings.SMTP_PORT
-        self.smtp_user = settings.SMTP_USER
-        self.smtp_password = settings.SMTP_PASSWORD
-        self.from_email = settings.FROM_EMAIL or settings.SMTP_USER
+        self.from_email = settings.FROM_EMAIL
         self.from_name = settings.FROM_NAME
-
-    def _get_socket(self, host, port, timeout):
-        # Force IPv4
-        return socket.create_connection((host, port), timeout, source_address=None)
-
+        # Resend API Key from environment
+        self.resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
     
     def send_email(
         self,
@@ -31,55 +21,29 @@ class EmailService:
         html_content: str,
         text_content: Optional[str] = None
     ) -> bool:
-        """Send an email."""
+        """Send an email using Resend API."""
+        if not self.resend_api_key:
+            print("Resend API key not configured. Skipping email send.")
+            return False
+        
         try:
-            # Create message
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"{self.from_name} <{self.from_email}>"
-            msg["To"] = to_email
+            import resend
+            resend.api_key = self.resend_api_key
             
-            # Add text and HTML parts
+            params = {
+                "from": f"{self.from_name} <{self.from_email}>",
+                "to": to_email,
+                "subject": subject,
+                "html": html_content,
+            }
+            
             if text_content:
-                part1 = MIMEText(text_content, "plain")
-                msg.attach(part1)
+                params["text"] = text_content
             
-            part2 = MIMEText(html_content, "html")
-            msg.attach(part2)
-            
-            # Resolve hostname to IPv4 address explicitly to avoid IPv6 issues
-            try:
-                print(f"Resolving IP for {self.smtp_host}...")
-                af, socktype, proto, canonname, sa = socket.getaddrinfo(self.smtp_host, self.smtp_port, socket.AF_INET, socket.SOCK_STREAM)[0]
-                smtp_ip = sa[0]
-                print(f"Resolved {self.smtp_host} to {smtp_ip}")
-            except Exception as e:
-                print(f"DNS resolution failed: {e}")
-                smtp_ip = self.smtp_host  # Fallback to hostname
-
-            print(f"Attempting to connect to SMTP server: {smtp_ip}:{self.smtp_port}")
-            
-            if self.smtp_port == 465:
-                # Use SSL for port 465
-                # Note: We must pass the original hostname for SSL validation if possible, but connecting by IP might cause SSL mismatch.
-                # If we connect by IP, we might need context=ssl.create_default_context() with check_hostname=False optionally.
-                # However, usually smtplib takes care. Let's try connecting to the IP directly.
-                with smtplib.SMTP_SSL(smtp_ip, self.smtp_port, timeout=10) as server:
-                    if self.smtp_user and self.smtp_password:
-                        server.login(self.smtp_user, self.smtp_password)
-                    server.send_message(msg)
-            else:
-                # Use STARTTLS for port 587 or others
-                with smtplib.SMTP(smtp_ip, self.smtp_port, timeout=10) as server:
-                    if self.smtp_port == 587:
-                        server.starttls()
-                    
-                    if self.smtp_user and self.smtp_password:
-                        server.login(self.smtp_user, self.smtp_password)
-                    server.send_message(msg)
-            
-            print(f"Email sent successfully to {to_email}")
+            r = resend.Emails.send(params)
+            print(f"Email sent successfully to {to_email}. ID: {r['id']}")
             return True
+            
         except Exception as e:
             print(f"Failed to send email to {to_email}. Error: {e}")
             import traceback

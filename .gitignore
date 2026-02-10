@@ -45,3 +45,4 @@ yarn-error.log*
 # Old files
 *_old.py
 *_old.*
+backend/scripts/reset_aiven_db.py
