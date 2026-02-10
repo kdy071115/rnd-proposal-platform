@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.services.data_sync import init_rd_notices_if_empty
-from app.api.v1 import auth, companies, documents, team, generate, recommendations
+from app.api.v1 import auth, companies, documents, team, generate, recommendations, users
 
 # Create FastAPI app
 app = FastAPI(title="R&D SaaS Platform API")
@@ -38,6 +38,9 @@ app.include_router(documents.router, prefix="/documents", tags=["documents"])
 app.include_router(team.router, prefix="/team", tags=["team"])
 app.include_router(generate.router, prefix="/generate", tags=["generate"])
 app.include_router(recommendations.router, prefix="/recommendations", tags=["recommendations"])
+app.include_router(users.router, prefix="/users", tags=["users"])
+from app.api.v1 import websocket
+app.include_router(websocket.router, tags=["websocket"])
 
 
 # Root endpoint

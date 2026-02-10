@@ -28,13 +28,17 @@ export default function TeamPage() {
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [inviteEmail, setInviteEmail] = useState("");
-    const [inviteName, setInviteName] = useState("");
     const [inviteRole, setInviteRole] = useState("Member");
     const [inviting, setInviting] = useState(false);
 
     const fetchMembers = async () => {
         try {
-            const res = await fetch("/api/team?company_id=123-45-67890");
+            const token = localStorage.getItem("token");
+            const res = await fetch("/api/team", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setMembers(data);
@@ -51,31 +55,36 @@ export default function TeamPage() {
     }, []);
 
     const handleInvite = async () => {
-        if (!inviteEmail || !inviteName) return;
+        if (!inviteEmail) return;
         setInviting(true);
         try {
+            const token = localStorage.getItem("token");
             const res = await fetch("/api/team/invite", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({
-                    name: inviteName,
+                    name: "User", // This will be overridden by the backend with actual user name
                     email: inviteEmail,
-                    role: inviteRole,
-                    company_id: "123-45-67890"
+                    role: inviteRole
                 })
             });
 
             if (res.ok) {
-                toast.success(`Invitation sent to ${inviteEmail}`);
+                toast.success(`초대 이메일이 발송되었습니다!`, {
+                    description: `${inviteEmail}로 초대 링크가 전송되었습니다.`
+                });
                 setInviteEmail("");
-                setInviteName("");
                 fetchMembers(); // Refresh list
             } else {
-                toast.error("Failed to send invitation");
+                const error = await res.json();
+                toast.error(error.detail || "초대 전송에 실패했습니다.");
             }
         } catch (e) {
             console.error(e);
-            toast.error("Error sending invitation");
+            toast.error("오류가 발생했습니다.");
         } finally {
             setInviting(false);
         }
@@ -85,7 +94,7 @@ export default function TeamPage() {
         <div className="p-8 space-y-8 max-w-6xl mx-auto">
             <div className="flex flex-col gap-2">
                 <h2 className="text-3xl font-bold tracking-tight">Team Management</h2>
-                <p className="text-muted-foreground">Invite colleagues to collaborate on your R&D projects.</p>
+                <p className="text-muted-foreground">기존 가입자를 팀으로 초대하여 함께 협업하세요.</p>
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
@@ -94,21 +103,17 @@ export default function TeamPage() {
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">
                             <UserPlus className="w-5 h-5 text-primary" />
-                            Invite Member
+                            초대하기
                         </CardTitle>
-                        <CardDescription>Send an invitation email to add a new member.</CardDescription>
+                        <CardDescription>이미 가입된 사용자의 이메일을 입력하세요.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Name</label>
-                            <Input placeholder="John Doe" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Email Address</label>
+                            <label className="text-sm font-medium">이메일 주소</label>
                             <Input placeholder="colleague@company.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Role</label>
+                            <label className="text-sm font-medium">역할 (Role)</label>
                             <Select value={inviteRole} onValueChange={setInviteRole}>
                                 <SelectTrigger>
                                     <SelectValue />
@@ -120,9 +125,9 @@ export default function TeamPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button className="w-full" onClick={handleInvite} disabled={inviting || !inviteEmail || !inviteName}>
+                        <Button className="w-full" onClick={handleInvite} disabled={inviting || !inviteEmail}>
                             {inviting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-                            {inviting ? "Sending..." : "Send Invitation"}
+                            {inviting ? "보내는 중..." : "초대장 발송"}
                         </Button>
                     </CardContent>
                 </Card>

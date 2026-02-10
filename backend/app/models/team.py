@@ -14,5 +14,6 @@ class TeamMemberEx(Base):
     role = Column(String(50))
     status = Column(String(20))
     company_id = Column(String(36), ForeignKey("companies.id"))
+    invitation_token = Column(String(255), nullable=True, unique=True)
 
     company = relationship("CompanyEx", back_populates="members")

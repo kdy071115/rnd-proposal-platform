@@ -39,10 +39,13 @@ export default function SignupPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                // Store token
-                localStorage.setItem("token", data.access_token);
-                toast.success("Account created successfully");
-                router.push("/"); // Redirect to dashboard
+                toast.success("회원가입 성공!", {
+                    description: "이메일을 확인하여 계정을 인증해주세요."
+                });
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                    router.push("/login");
+                }, 2000);
             } else {
                 const errorData = await res.json();
                 toast.error(errorData.detail || "Signup failed");

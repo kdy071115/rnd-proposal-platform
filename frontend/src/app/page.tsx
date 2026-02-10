@@ -117,7 +117,18 @@ export default function Dashboard() {
 
       const { content } = await generateRes.json();
 
-      // Create document with AI-generated content
+      // Convert markdown to HTML for Tiptap editor
+      const { marked } = await import('marked');
+
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+      });
+
+      const htmlContent = await marked.parse(content);
+      console.log("Apply - Converted markdown to HTML");
+
+      // Create document with AI-generated HTML content
       const res = await fetch("/api/documents", {
         method: "POST",
         headers: {
@@ -126,7 +137,7 @@ export default function Dashboard() {
         },
         body: JSON.stringify({
           title: `제안서: ${rec.title}`,
-          content: content
+          content: htmlContent  // Save as HTML instead of markdown
         })
       });
 

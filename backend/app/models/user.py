@@ -13,5 +13,7 @@ class UserEx(Base):
     hashed_password = Column(String(200))
     full_name = Column(String(100))
     company_id = Column(String(36), ForeignKey("companies.id"), nullable=True)
+    email_verified = Column(String(10), default="false")  # "true" or "false"
+    verification_token = Column(String(255), nullable=True, unique=True)
 
     company = relationship("CompanyEx")

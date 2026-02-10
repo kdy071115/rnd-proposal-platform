@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label"; // Check if this exists, if not use html label
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Lock } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get("redirect");
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -39,7 +42,13 @@ export default function LoginPage() {
                 // Store token
                 localStorage.setItem("token", data.access_token);
                 toast.success("Logged in successfully");
-                router.push("/"); // Redirect to dashboard
+
+                // Redirect to the stored URL or dashboard
+                if (redirectUrl) {
+                    router.push(redirectUrl);
+                } else {
+                    router.push("/");
+                }
             } else {
                 const errorData = await res.json();
                 toast.error(errorData.detail || "Login failed");
@@ -99,7 +108,7 @@ export default function LoginPage() {
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-center flex-col space-y-2">
                     <div className="text-sm text-muted-foreground">
                         Don't have an account?{" "}
                         <Link href="/signup" className="text-primary hover:underline">
@@ -111,3 +120,4 @@ export default function LoginPage() {
         </div>
     );
 }
+

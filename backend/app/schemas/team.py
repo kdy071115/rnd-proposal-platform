@@ -9,12 +9,17 @@ class TeamMemberBase(BaseModel):
 
 
 class TeamMemberCreate(TeamMemberBase):
-    company_id: str
+    pass
+
+
+class InvitationAccept(BaseModel):
+    token: str
 
 
 class TeamMemberResponse(TeamMemberBase):
     id: int
     status: str
+    invitation_token: str | None = None
     
     class Config:
         from_attributes = True
