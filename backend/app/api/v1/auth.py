@@ -80,6 +80,18 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and get access token."""
     user = db.query(UserEx).filter(UserEx.email == form_data.username).first()
+    
+    # If user not found in verified users, check pending
+    if not user:
+        from app.models.pending_user import PendingUserEx
+        pending = db.query(PendingUserEx).filter(PendingUserEx.email == form_data.username).first()
+        if pending:
+            raise HTTPException(
+                status_code=401,
+                detail="Email verification is pending. Please check your email.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=401,
