@@ -1,18 +1,22 @@
 """Email service for sending invitations and notifications."""
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Optional
-import os
 
 from app.core.config import settings
 
 
 class EmailService:
-    """Service for sending emails using Resend API."""
+    """Service for sending emails using Gmail SMTP."""
     
     def __init__(self):
-        self.from_email = settings.FROM_EMAIL
+        self.smtp_host = settings.SMTP_HOST
+        self.smtp_port = settings.SMTP_PORT
+        self.smtp_user = settings.SMTP_USER
+        self.smtp_password = settings.SMTP_PASSWORD
+        self.from_email = settings.FROM_EMAIL or settings.SMTP_USER
         self.from_name = settings.FROM_NAME
-        # Resend API Key from environment
-        self.resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
     
     def send_email(
         self,
@@ -21,33 +25,33 @@ class EmailService:
         html_content: str,
         text_content: Optional[str] = None
     ) -> bool:
-        """Send an email using Resend API."""
-        if not self.resend_api_key:
-            print("Resend API key not configured. Skipping email send.")
-            return False
-        
+        """Send an email."""
         try:
-            import resend
-            resend.api_key = self.resend_api_key
+            # Create message
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
+            msg["To"] = to_email
             
-            params = {
-                "from": f"{self.from_name} <{self.from_email}>",
-                "to": to_email,
-                "subject": subject,
-                "html": html_content,
-            }
-            
+            # Add text and HTML parts
             if text_content:
-                params["text"] = text_content
+                part1 = MIMEText(text_content, "plain")
+                msg.attach(part1)
             
-            r = resend.Emails.send(params)
-            print(f"Email sent successfully to {to_email}. ID: {r['id']}")
+            part2 = MIMEText(html_content, "html")
+            msg.attach(part2)
+            
+            # Send email
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                server.starttls()
+                if self.smtp_user and self.smtp_password:
+                    server.login(self.smtp_user, self.smtp_password)
+                server.send_message(msg)
+            
+            print(f"Email sent successfully to {to_email}")
             return True
-            
         except Exception as e:
             print(f"Failed to send email to {to_email}. Error: {e}")
-            import traceback
-            traceback.print_exc()
             return False
     
     def send_team_invitation(

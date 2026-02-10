@@ -18,10 +18,11 @@ class Settings(BaseSettings):
     
     # Government APIs (Optional - will use mock data if not provided)
     NTIS_API_KEY: str = ""
-    KSTARTUP_API_KEY: str = ""
-    
-    # Email Configuration
-    RESEND_API_KEY: str = ""  # Resend API key for email delivery
+    # SMTP Email Configuration
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
     FROM_NAME: str = "R&D SaaS Platform"
     
