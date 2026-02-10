@@ -14,14 +14,15 @@ from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentRespons
 router = APIRouter()
 
 
-def _create_document_impl(
+@router.post("/", response_model=DocumentResponse)
+@router.post("", response_model=DocumentResponse, include_in_schema=False)
+def create_document(
     doc: DocumentCreate,
-    current_user: UserEx,
-    db: Session
-) -> DocumentResponse:
-    """Internal implementation for document creation."""
+    current_user: UserEx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new document."""
     now = datetime.datetime.now().isoformat()
-    
     db_doc = DocumentEx(
         title=doc.title, 
         content=doc.content, 
@@ -34,27 +35,8 @@ def _create_document_impl(
     return db_doc
 
 
-@router.post("/", response_model=DocumentResponse)
-def create_document_with_slash(
-    doc: DocumentCreate,
-    current_user: UserEx = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Create a new document (with trailing slash)."""
-    return _create_document_impl(doc, current_user, db)
-
-
-@router.post("", response_model=DocumentResponse)
-def create_document_without_slash(
-    doc: DocumentCreate,
-    current_user: UserEx = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Create a new document (without trailing slash)."""
-    return _create_document_impl(doc, current_user, db)
-
-
 @router.get("/", response_model=List[DocumentResponse])
+@router.get("", response_model=List[DocumentResponse], include_in_schema=False)
 def get_documents(current_user: UserEx = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all documents for current user's company."""
     return db.query(DocumentEx).filter(DocumentEx.company_id == current_user.company_id).all()

@@ -21,7 +21,12 @@ export default function DocumentsPage() {
     useEffect(() => {
         const fetchDocuments = async () => {
             try {
-                const res = await fetch("/api/documents?company_id=123-45-67890");
+                const token = localStorage.getItem("token");
+                const res = await fetch("/api/documents", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setDocuments(data);

@@ -127,6 +127,7 @@ def accept_invitation(
 
 
 @router.get("/", response_model=List[TeamMemberResponse])
+@router.get("", response_model=List[TeamMemberResponse], include_in_schema=False)
 def get_team_members(current_user: UserEx = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all team members for current user's company."""
     return db.query(TeamMemberEx).filter(TeamMemberEx.company_id == current_user.company_id).all()

@@ -86,13 +86,34 @@ export default function TiptapEditor({ content, onChange }: EditorProps) {
     // Sync content updates from parent
     useEffect(() => {
         if (editor && content !== undefined && editor.getHTML() !== content) {
-            console.log("Editor receiving content:", content?.substring(0, 200));
+
+            // Save current selection
+            const { from, to } = editor.state.selection;
+
+            // Update content without emitting another update event
+            // @ts-ignore - Tiptap types can be tricky
+            editor.commands.setContent(content, { emitUpdate: false });
+
+            // Restore selection safely without scrolling
+            const newDocSize = editor.state.doc.content.size;
+            const newTo = Math.min(to, newDocSize);
+            const newFrom = Math.min(from, newTo);
 
             try {
-                console.log("Setting content");
-                editor.commands.setContent(content);
-            } catch (error) {
-                console.error("Error setting content:", error);
+                // Use the constructor of the current selection to create a new one
+                // This avoids importing TextSelection from @tiptap/pm/state which might not be directly available
+                // @ts-ignore
+                const SelectionClass = editor.state.selection.constructor;
+                // @ts-ignore
+                const newSelection = SelectionClass.create(editor.state.doc, newFrom, newTo);
+
+                const tr = editor.state.tr.setSelection(newSelection);
+                // Do NOT call scrollIntoView()
+                editor.view.dispatch(tr);
+            } catch (e) {
+                console.warn("Failed to restore selection:", e);
+                // Fallback to commands if manual transaction fails
+                editor.commands.setTextSelection({ from: newFrom, to: newTo });
             }
         }
     }, [content, editor]);
