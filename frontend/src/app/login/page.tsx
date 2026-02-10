@@ -39,8 +39,11 @@ function LoginContent() {
 
             if (res.ok) {
                 const data = await res.json();
-                // Store token
+                // Store token in localStorage (for client-side use)
                 localStorage.setItem("token", data.access_token);
+                // Store token in cookie (for middleware/server-side use)
+                document.cookie = `token=${data.access_token}; path=/; max-age=3600; SameSite=Lax`;
+
                 toast.success("Logged in successfully");
 
                 // Redirect to the stored URL or dashboard
