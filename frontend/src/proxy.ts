@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 // 이 경로는 로그인이 없어도 접근 가능한 페이지들입니다.
 const publicPaths = ["/login", "/signup", "/verify-email", "/accept-invite"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const token = request.cookies.get("token")?.value;
     const { pathname } = request.nextUrl;
 

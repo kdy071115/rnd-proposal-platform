@@ -34,9 +34,16 @@ export function Sidebar() {
     }, [pathname]);
 
     const handleLogout = () => {
+        // Clear local storage
         localStorage.removeItem("token");
+
+        // Clear cookie for middleware
+        // This is crucial to prevent middleware from immediately redirecting back to home if user tries to login again
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
         setIsLoggedIn(false);
         router.push("/login");
+        router.refresh(); // Refresh to insure middleware sees the cleared cookie
     };
 
     if (pathname === "/login" || pathname === "/signup") {

@@ -28,16 +28,22 @@ export default function Dashboard() {
       }
 
       const res = await fetch(url, { headers });
-      if (!res.ok) {
-        // Fallback or error handling
-        if (token) {
-          console.log("Failed to fetch my company, trying bizId...");
-          // You might want to unset token or handle specific 404
-        }
-        throw new Error("Company not found");
-      }
 
-      const jsonData = await res.json();
+      let jsonData;
+      if (!res.ok) {
+        console.warn("Company data fetch failed, using fallback default data.");
+        // Use empty default data to prevent crash
+        jsonData = {
+          name: "My Company",
+          status: "setup_needed",
+          score: { total: 0, grade: '-', breakdown: { financial: 0, technology: 0, experience: 0 } },
+          patents: { registered: 0, pending: 0, grade: '-' },
+          financials: [],
+          projects: []
+        };
+      } else {
+        jsonData = await res.json();
+      }
       // Map API response to UI data structure if needed, or update CompanyData type
       // For now, assuming detailed scoring/analysis logic will be moved to backend
       const mappedData: CompanyData = {
