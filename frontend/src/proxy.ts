@@ -7,6 +7,21 @@ const publicPaths = ["/login", "/signup", "/verify-email", "/accept-invite"];
 export function proxy(request: NextRequest) {
     const token = request.cookies.get("token")?.value;
     const { pathname } = request.nextUrl;
+    const requestHeaders = new Headers(request.headers);
+
+    // Add ngrok-skip-browser-warning request header for all requests
+    // This allows requests to bypass the ngrok browser warning interstitial
+    requestHeaders.set('ngrok-skip-browser-warning', '69420');
+
+    // API 요청인 경우 인증 리다이렉트를 수행하지 않고 헤더만 추가하여 통과시킵니다.
+    // (API 인증은 백엔드에서 처리하거나 별도의 로직으로 처리해야 함)
+    if (pathname.startsWith("/api")) {
+        return NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
+    }
 
     // 1. 토큰이 없는데 보호된 페이지에 접근하려는 경우
     if (!token && !publicPaths.some(path => pathname.startsWith(path))) {
@@ -22,7 +37,11 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/", request.url));
     }
 
-    return NextResponse.next();
+    return NextResponse.next({
+        request: {
+            headers: requestHeaders,
+        },
+    });
 }
 
 // 미들웨어가 실행될 경로 설정 (모든 경로에서 실행하되 정적로딩 등 제외)
@@ -30,11 +49,11 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except for the ones starting with:
-         * - api (API routes)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
+         * (Removed 'api' from exclusion list to allow header injection)
          */
-        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+        "/((?!_next/static|_next/image|favicon.ico).*)",
     ],
 };
